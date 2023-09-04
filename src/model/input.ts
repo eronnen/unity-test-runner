@@ -72,6 +72,7 @@ const Input = {
     const rawArtifactsPath = getInput('artifactsPath') || 'artifacts';
     const rawUseHostNetwork = getInput('useHostNetwork') || 'false';
     const sshAgent = getInput('sshAgent') || '';
+    const rawAllowMultipleSshDeployKeys = getInput('allowMultipleSshDeployKeys') || 'false';
     const gitPrivateToken = getInput('gitPrivateToken') || '';
     const githubToken = getInput('githubToken') || '';
     const checkName = getInput('checkName') || 'Test Results';
@@ -120,8 +121,15 @@ const Input = {
     // Sanitise other input
     const artifactsPath = rawArtifactsPath.replace(/\/$/, '');
     const useHostNetwork = rawUseHostNetwork === 'true';
+    const allowMultipleSshDeployKeys = rawAllowMultipleSshDeployKeys === 'true';
     const editorVersion =
       unityVersion === 'auto' ? UnityVersionParser.read(projectPath) : unityVersion;
+
+    if (allowMultipleSshDeployKeys && sshAgent === '') {
+      throw new Error(
+        'allowMultipleSshDeployKeys is enabled, but sshAgent is not set. Please set sshAgent to the name of the SSH Agent action.',
+      );
+    }
 
     // Return sanitised input
     return {
@@ -134,6 +142,7 @@ const Input = {
       artifactsPath,
       useHostNetwork,
       sshAgent,
+      allowMultipleSshDeployKeys,
       gitPrivateToken,
       githubToken,
       checkName,

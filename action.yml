@@ -36,6 +36,10 @@ inputs:
     required: false
     default: ''
     description: 'SSH Agent path to forward to the container.'
+  allowMultipleSshDeployKeys:
+    required: false
+    default: false
+    description: 'Allow multiple SSH deploy keys defined by webfactory/ssh-agent action to be forwarded to the container.'
   gitPrivateToken:
     required: false
     default: ''

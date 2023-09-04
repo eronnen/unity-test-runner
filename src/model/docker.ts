@@ -62,6 +62,7 @@ const Docker = {
       artifactsPath,
       useHostNetwork,
       sshAgent,
+      allowMultipleSshDeployKeys,
       packageMode,
       packageName,
       gitPrivateToken,
@@ -128,6 +129,16 @@ const Docker = {
                 ${
                   sshAgent ? `--volume /home/runner/.ssh/known_hosts:/root/.ssh/known_hosts:ro` : ''
                 } \
+                ${
+                  allowMultipleSshDeployKeys
+                    ? `--volume /home/runner/.gitconfig:/root/.gitconfig:ro`
+                    : ''
+                } \
+                ${
+                  allowMultipleSshDeployKeys
+                    ? `--volume /home/runner/.ssh/config:/root/.ssh/config`
+                    : ''
+                } \
                 ${useHostNetwork ? '--net=host' : ''} \
                 ${githubToken ? '--env USE_EXIT_CODE=false' : '--env USE_EXIT_CODE=true'} \
                 ${image} \
@@ -146,6 +157,7 @@ const Docker = {
       artifactsPath,
       useHostNetwork,
       sshAgent,
+      allowMultipleSshDeployKeys,
       packageMode,
       packageName,
       gitPrivateToken,
@@ -211,6 +223,16 @@ const Docker = {
                 ${
                   sshAgent
                     ? `--volume c:/Users/Administrator/.ssh/known_hosts:c:/root/.ssh/known_hosts`
+                    : ''
+                } \
+                ${
+                  allowMultipleSshDeployKeys
+                    ? `--volume c:/Users/Administrator/.gitconfig:c:/root/.gitconfig`
+                    : ''
+                } \
+                ${
+                  allowMultipleSshDeployKeys
+                    ? `--volume c:/Users/Administrator/.ssh/config:c:/root/.ssh/config`
                     : ''
                 } \
                 ${useHostNetwork ? '--net=host' : ''} \

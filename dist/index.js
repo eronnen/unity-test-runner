@@ -98,7 +98,7 @@ function run() {
         try {
             model_1.Action.checkCompatibility();
             const { workspace, actionFolder } = model_1.Action;
-            const { editorVersion, customImage, projectPath, customParameters, testMode, coverageOptions, artifactsPath, useHostNetwork, sshAgent, gitPrivateToken, githubToken, checkName, packageMode, packageName, chownFilesTo, unityLicensingServer, } = model_1.Input.getFromUser();
+            const { editorVersion, customImage, projectPath, customParameters, testMode, coverageOptions, artifactsPath, useHostNetwork, sshAgent, allowMultipleSshDeployKeys, gitPrivateToken, githubToken, checkName, packageMode, packageName, chownFilesTo, unityLicensingServer, } = model_1.Input.getFromUser();
             const baseImage = new model_1.ImageTag({ editorVersion, customImage });
             const runnerContext = model_1.Action.runnerContext();
             try {
@@ -112,6 +112,7 @@ function run() {
                     artifactsPath,
                     useHostNetwork,
                     sshAgent,
+                    allowMultipleSshDeployKeys,
                     packageMode,
                     packageName,
                     gitPrivateToken,
@@ -262,7 +263,7 @@ const Docker = {
         });
     },
     getLinuxCommand(image, parameters) {
-        const { actionFolder, editorVersion, workspace, projectPath, customParameters, testMode, coverageOptions, artifactsPath, useHostNetwork, sshAgent, packageMode, packageName, gitPrivateToken, githubToken, runnerTemporaryPath, chownFilesTo, unityLicensingServer, } = parameters;
+        const { actionFolder, editorVersion, workspace, projectPath, customParameters, testMode, coverageOptions, artifactsPath, useHostNetwork, sshAgent, allowMultipleSshDeployKeys, packageMode, packageName, gitPrivateToken, githubToken, runnerTemporaryPath, chownFilesTo, unityLicensingServer, } = parameters;
         const githubHome = path_1.default.join(runnerTemporaryPath, '_github_home');
         if (!(0, fs_1.existsSync)(githubHome))
             (0, fs_1.mkdirSync)(githubHome);
@@ -317,13 +318,19 @@ const Docker = {
                 --volume "${actionFolder}/unity-config:/usr/share/unity3d/config/:z" \
                 ${sshAgent ? `--volume ${sshAgent}:/ssh-agent` : ''} \
                 ${sshAgent ? `--volume /home/runner/.ssh/known_hosts:/root/.ssh/known_hosts:ro` : ''} \
+                ${allowMultipleSshDeployKeys
+            ? `--volume /home/runner/.gitconfig:/root/.gitconfig:ro`
+            : ''} \
+                ${allowMultipleSshDeployKeys
+            ? `--volume /home/runner/.ssh/config:/root/.ssh/config`
+            : ''} \
                 ${useHostNetwork ? '--net=host' : ''} \
                 ${githubToken ? '--env USE_EXIT_CODE=false' : '--env USE_EXIT_CODE=true'} \
                 ${image} \
                 /bin/bash -c /entrypoint.sh`;
     },
     getWindowsCommand(image, parameters) {
-        const { actionFolder, editorVersion, workspace, projectPath, customParameters, testMode, coverageOptions, artifactsPath, useHostNetwork, sshAgent, packageMode, packageName, gitPrivateToken, githubToken, runnerTemporaryPath, chownFilesTo, unityLicensingServer, } = parameters;
+        const { actionFolder, editorVersion, workspace, projectPath, customParameters, testMode, coverageOptions, artifactsPath, useHostNetwork, sshAgent, allowMultipleSshDeployKeys, packageMode, packageName, gitPrivateToken, githubToken, runnerTemporaryPath, chownFilesTo, unityLicensingServer, } = parameters;
         const githubHome = path_1.default.join(runnerTemporaryPath, '_github_home');
         if (!(0, fs_1.existsSync)(githubHome))
             (0, fs_1.mkdirSync)(githubHome);
@@ -378,6 +385,12 @@ const Docker = {
                 ${sshAgent ? `--volume ${sshAgent}:c:/ssh-agent` : ''} \
                 ${sshAgent
             ? `--volume c:/Users/Administrator/.ssh/known_hosts:c:/root/.ssh/known_hosts`
+            : ''} \
+                ${allowMultipleSshDeployKeys
+            ? `--volume c:/Users/Administrator/.gitconfig:c:/root/.gitconfig`
+            : ''} \
+                ${allowMultipleSshDeployKeys
+            ? `--volume c:/Users/Administrator/.ssh/config:c:/root/.ssh/config`
             : ''} \
                 ${useHostNetwork ? '--net=host' : ''} \
                 ${githubToken ? '--env USE_EXIT_CODE=false' : '--env USE_EXIT_CODE=true'} \
@@ -619,6 +632,7 @@ const Input = {
         const rawArtifactsPath = (0, core_1.getInput)('artifactsPath') || 'artifacts';
         const rawUseHostNetwork = (0, core_1.getInput)('useHostNetwork') || 'false';
         const sshAgent = (0, core_1.getInput)('sshAgent') || '';
+        const rawAllowMultipleSshDeployKeys = (0, core_1.getInput)('allowMultipleSshDeployKeys') || 'false';
         const gitPrivateToken = (0, core_1.getInput)('gitPrivateToken') || '';
         const githubToken = (0, core_1.getInput)('githubToken') || '';
         const checkName = (0, core_1.getInput)('checkName') || 'Test Results';
@@ -656,7 +670,11 @@ const Input = {
         // Sanitise other input
         const artifactsPath = rawArtifactsPath.replace(/\/$/, '');
         const useHostNetwork = rawUseHostNetwork === 'true';
+        const allowMultipleSshDeployKeys = rawAllowMultipleSshDeployKeys === 'true';
         const editorVersion = unityVersion === 'auto' ? unity_version_parser_1.default.read(projectPath) : unityVersion;
+        if (allowMultipleSshDeployKeys && sshAgent === '') {
+            throw new Error('allowMultipleSshDeployKeys is enabled, but sshAgent is not set. Please set sshAgent to the name of the SSH Agent action.');
+        }
         // Return sanitised input
         return {
             editorVersion,
@@ -668,6 +686,7 @@ const Input = {
             artifactsPath,
             useHostNetwork,
             sshAgent,
+            allowMultipleSshDeployKeys,
             gitPrivateToken,
             githubToken,
             checkName,
